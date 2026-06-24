@@ -14,6 +14,10 @@
     --amber-dark:#a35f1c;
     --green:#3c6e4f;
     --muted:#6b6f76;
+    --input-bg:#fff;
+    --hover-bg:#fbf6ea;
+    --divider:#f1eee4;
+    --checked-bg:#fdf6ea;
     --mono: "IBM Plex Mono", "SF Mono", Menlo, Consolas, monospace;
     --sans: "IBM Plex Sans", "Segoe UI", system-ui, -apple-system, sans-serif;
   }
@@ -56,9 +60,13 @@
   header p{margin:0; color:#b3afa0; font-size:15px; max-width:46ch; line-height:1.55;}
 
   .card{
-    background:rgba(255,255,255,.82); border:1px solid rgba(220,216,204,.8); border-radius:10px;
-    padding:28px; margin-top:48px; position:relative; box-shadow:0 18px 40px -24px rgba(20,23,29,.45);
-    backdrop-filter:blur(8px); -webkit-backdrop-filter:blur(8px);
+    --ink:#f3efe4; --muted:#aba692; --line:rgba(255,255,255,.14);
+    --input-bg:rgba(255,255,255,.06); --hover-bg:rgba(255,255,255,.1);
+    --divider:rgba(255,255,255,.1); --checked-bg:rgba(200,120,43,.18);
+    background:rgba(18,17,15,.55); border:1px solid rgba(255,255,255,.1); border-radius:10px;
+    padding:28px; margin-top:48px; position:relative; box-shadow:0 18px 40px -24px rgba(0,0,0,.6);
+    backdrop-filter:blur(10px); -webkit-backdrop-filter:blur(10px);
+    color:var(--ink);
   }
   .card + .card{margin-top:18px;}
   .step{
@@ -68,7 +76,7 @@
     font-family:var(--mono); font-size:12px; color:var(--amber-dark);
     border:1px solid var(--line); border-radius:50%; width:22px; height:22px;
     display:flex; align-items:center; justify-content:center; flex-shrink:0;
-    background:#fbf6ea;
+    background:var(--checked-bg);
   }
   .step h2{font-size:16px; margin:0; font-weight:600;}
 
@@ -78,7 +86,7 @@
   }
   input[type="text"]{
     width:100%; padding:14px; font-size:16px; border:1px solid var(--line);
-    border-radius:7px; font-family:var(--sans); background:#fff; color:var(--ink);
+    border-radius:7px; font-family:var(--sans); background:var(--input-bg); color:var(--ink);
     -webkit-appearance:none; appearance:none;
   }
   input[type="text"]:focus{outline:2px solid var(--amber); outline-offset:1px; border-color:var(--amber);}
@@ -86,17 +94,17 @@
   .autocomplete{position:relative;}
   .suggestions{
     position:absolute; left:0; right:0; top:calc(100% + 6px); z-index:20;
-    background:#fff; border:1px solid var(--line); border-radius:8px;
+    background:var(--input-bg); border:1px solid var(--line); border-radius:8px;
     box-shadow:0 14px 30px -12px rgba(20,23,29,.35);
     max-height:260px; overflow-y:auto; display:none;
     -webkit-overflow-scrolling:touch;
   }
   .suggestions.show{display:block;}
   .suggestions div{
-    padding:13px 14px; font-size:15px; cursor:pointer; border-bottom:1px solid #f1eee4;
+    padding:13px 14px; font-size:15px; cursor:pointer; border-bottom:1px solid var(--divider);
   }
   .suggestions div:last-child{border-bottom:none;}
-  .suggestions div:hover, .suggestions div.active{background:#fbf6ea;}
+  .suggestions div:hover, .suggestions div.active{background:var(--hover-bg);}
 
   @media (max-width: 560px){
     .wrap{padding:0 16px 60px;}
@@ -126,7 +134,7 @@
     user-select:none;
   }
   .chk input{width:16px; height:16px; accent-color:var(--amber); margin:0; flex-shrink:0;}
-  .chk.checked{border-color:var(--amber); background:#fdf6ea; color:var(--amber-dark); font-weight:600;}
+  .chk.checked{border-color:var(--amber); background:var(--checked-bg); color:var(--amber-dark); font-weight:600;}
   .chk.disabled{opacity:.4; cursor:not-allowed;}
   .chk.all{font-weight:600;}
   @media (max-width: 420px){
@@ -244,7 +252,7 @@ const downloadStatus = document.getElementById('downloadStatus');
 let SCHEDULE = null; // { months: [ {label, dateColumns:[{col,date}], entries:[{name, role, datesByCol:{col:value}}] } ] }
 
 // Update this whenever the bundled schedule data below is refreshed.
-const BUNDLED_DATA_UPDATED = 'Jun 24, 2026, 07:55';
+const BUNDLED_DATA_UPDATED = 'Jun 24, 2026, 11:12 EEST';
 
 function showBundledLabel(){
   dataSourceText.textContent = 'Using the bundled schedule';
