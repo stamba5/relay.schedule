@@ -129,13 +129,17 @@
   }
   .chk{
     display:flex; align-items:center; justify-content:center; gap:7px;
-    border:1px solid #000; border-radius:7px; padding:12px 6px;
-    font-size:14px; cursor:pointer; background:#000; color:#f3efe4; transition:.12s;
+    border:1px solid rgba(0,0,0,.5); border-radius:7px; padding:12px 6px;
+    font-size:14px; cursor:pointer; background:rgba(20,18,15,.45); color:#f3efe4;
+    transition:.15s background,.15s border-color,.15s transform;
     user-select:none;
   }
+  .chk:hover{background:rgba(40,36,30,.65); border-color:rgba(0,0,0,.7); transform:translateY(-1px);}
   .chk input{width:16px; height:16px; accent-color:#000; margin:0; flex-shrink:0;}
-  .chk.checked{border-color:#555; background:#1a1a1a; color:#fff; font-weight:600;}
+  .chk.checked{border-color:rgba(232,168,92,.55); background:rgba(40,30,15,.6); color:#fff; font-weight:600;}
+  .chk.checked:hover{background:rgba(55,42,20,.7);}
   .chk.disabled{opacity:.4; cursor:not-allowed;}
+  .chk.disabled:hover{transform:none;}
   .chk.all{font-weight:600;}
   @media (max-width: 420px){
     .month-grid{grid-template-columns:repeat(2, 1fr);}
@@ -143,12 +147,12 @@
 
   button#downloadBtn{
     width:100%; margin-top:20px; padding:15px; font-size:15px; font-weight:600;
-    background:#000; color:#f3efe4; border:1px solid #000; border-radius:7px; cursor:pointer;
-    transition:.12s background;
+    background:rgba(20,18,15,.5); color:#f3efe4; border:1px solid rgba(0,0,0,.55); border-radius:7px; cursor:pointer;
+    transition:.15s background,.15s border-color,.15s transform;
     font-family:var(--sans);
   }
-  button#downloadBtn:hover:not(:disabled){background:#1a1a1a;}
-  button#downloadBtn:disabled{background:#2a2a2a; color:#6b6b6b; cursor:not-allowed;}
+  button#downloadBtn:hover:not(:disabled){background:rgba(45,38,28,.7); border-color:rgba(0,0,0,.75); transform:translateY(-1px);}
+  button#downloadBtn:disabled{background:rgba(30,30,30,.4); color:#6b6b6b; cursor:not-allowed;}
 
   .status{
     margin-top:14px; font-size:13px; padding:11px 14px; border-radius:6px; display:none;
