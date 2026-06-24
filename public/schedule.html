@@ -4,7 +4,6 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
 <title>Schedule → Calendar</title>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <style>
   :root{
     --ink:#1c1f26;
@@ -70,27 +69,6 @@
   }
   .step h2{font-size:16px; margin:0; font-weight:600;}
 
-  #dropzone{
-    border:1.5px dashed var(--line); border-radius:8px; padding:26px;
-    text-align:center; cursor:pointer; transition:.15s border-color, .15s background;
-    background:#fbfaf6;
-  }
-  #dropzone:hover, #dropzone.drag{border-color:var(--amber); background:#fdf6ea;}
-  #dropzone .icon{font-size:22px; margin-bottom:8px; opacity:.7;}
-  #dropzone p{margin:0; font-size:14px; color:var(--muted);}
-  #dropzone strong{color:var(--ink);}
-  #fileInput{display:none;}
-
-  .filerow{
-    display:flex; align-items:center; justify-content:space-between;
-    font-family:var(--mono); font-size:13px; background:#fbf6ea; border:1px solid var(--line);
-    border-radius:6px; padding:10px 14px; margin-top:14px;
-  }
-  .filerow button{
-    background:none; border:none; color:var(--muted); cursor:pointer; font-size:13px;
-    text-decoration:underline;
-  }
-
   label.field-label{
     display:block; font-size:12px; font-weight:600; text-transform:uppercase;
     letter-spacing:.06em; color:var(--muted); margin-bottom:8px;
@@ -123,7 +101,6 @@
     h1{font-size:25px;}
     header p{font-size:14px;}
     .card{padding:20px; margin-top:28px;}
-    #dropzone{padding:20px 14px;}
     .step h2{font-size:15px;}
     button#downloadBtn{padding:16px; font-size:15.5px;}
     .month-grid{grid-template-columns:repeat(2, 1fr);}
@@ -173,11 +150,9 @@
   .datasource{margin-top:18px;}
   #dataSourceLabel{
     display:block; width:100%; text-align:center; background:none; border:none;
-    color:var(--muted); font-size:12.5px; font-family:var(--sans); cursor:pointer;
-    padding:8px; text-decoration:none;
+    color:var(--muted); font-size:12.5px; font-family:var(--sans);
+    padding:8px;
   }
-  #dataSourceLabel:hover{color:var(--ink);}
-  #dataSourceText{text-decoration:underline; text-decoration-color:var(--line);}
   #dataSourceDate{opacity:.8;}
 
   footer{
@@ -240,20 +215,8 @@
   </div>
 
   <div class="datasource">
-    <button id="dataSourceLabel" type="button">📊 <span id="dataSourceText">Using the bundled schedule</span><span id="dataSourceDate"></span> · update file</button>
+    <div id="dataSourceLabel">📊 <span id="dataSourceText">Using the bundled schedule</span><span id="dataSourceDate"></span></div>
     <button id="signOutBtn" type="button" style="display:block;width:100%;text-align:center;background:none;border:none;color:var(--muted);font-size:12.5px;font-family:var(--sans);cursor:pointer;padding:4px;text-decoration:underline;text-decoration-color:var(--line);">Sign out</button>
-    <div class="card" id="uploadPanel" style="display:none;">
-      <div id="dropzone">
-        <div class="icon">📄</div>
-        <p><strong>Click to choose</strong> an updated .xlsx file, or drag it here</p>
-      </div>
-      <input type="file" id="fileInput" accept=".xlsx,.xls">
-      <div class="filerow" id="fileRow" style="display:none;">
-        <span id="fileName"></span>
-        <button id="clearFile">use bundled data instead</button>
-      </div>
-      <div class="status" id="loadStatus"></div>
-    </div>
   </div>
 
   <footer>
@@ -263,16 +226,8 @@
 </div>
 
 <script>
-const dataSourceLabel = document.getElementById('dataSourceLabel');
 const dataSourceText = document.getElementById('dataSourceText');
 const dataSourceDate = document.getElementById('dataSourceDate');
-const uploadPanel = document.getElementById('uploadPanel');
-const dropzone = document.getElementById('dropzone');
-const fileInput = document.getElementById('fileInput');
-const fileRow = document.getElementById('fileRow');
-const fileName = document.getElementById('fileName');
-const clearFileBtn = document.getElementById('clearFile');
-const loadStatus = document.getElementById('loadStatus');
 const workerInput = document.getElementById('workerInput');
 const suggestions = document.getElementById('suggestions');
 const workerHint = document.getElementById('workerHint');
@@ -291,15 +246,6 @@ function showBundledLabel(){
   dataSourceText.textContent = 'Using the bundled schedule';
   dataSourceDate.textContent = ' (updated ' + BUNDLED_DATA_UPDATED + ')';
 }
-function showUploadedLabel(name){
-  dataSourceText.textContent = 'Using: ' + name;
-  dataSourceDate.textContent = '';
-}
-
-dataSourceLabel.addEventListener('click', () => {
-  const willShow = uploadPanel.style.display === 'none';
-  uploadPanel.style.display = willShow ? 'block' : 'none';
-});
 
 document.getElementById('signOutBtn').addEventListener('click', async () => {
   await fetch('/api/logout', { method: 'POST' });
@@ -309,51 +255,6 @@ document.getElementById('signOutBtn').addEventListener('click', async () => {
 function showStatus(el, msg, ok){
   el.textContent = msg;
   el.className = 'status show ' + (ok ? 'ok' : 'err');
-}
-
-dropzone.addEventListener('click', () => fileInput.click());
-dropzone.addEventListener('dragover', e => { e.preventDefault(); dropzone.classList.add('drag'); });
-dropzone.addEventListener('dragleave', () => dropzone.classList.remove('drag'));
-dropzone.addEventListener('drop', e => {
-  e.preventDefault();
-  dropzone.classList.remove('drag');
-  if (e.dataTransfer.files.length) handleFile(e.dataTransfer.files[0]);
-});
-fileInput.addEventListener('change', e => { if (e.target.files.length) handleFile(e.target.files[0]); });
-clearFileBtn.addEventListener('click', revertToBundledData);
-
-async function revertToBundledData(){
-  fileInput.value = '';
-  fileRow.style.display = 'none';
-  loadStatus.className = 'status';
-  await loadBakedData();
-  showBundledLabel();
-  showStatus(loadStatus, 'Reverted to the bundled schedule data.', true);
-}
-
-function handleFile(file){
-  const reader = new FileReader();
-  reader.onload = (e) => {
-    try {
-      const data = new Uint8Array(e.target.result);
-      const wb = XLSX.read(data, { type: 'array', cellDates: true });
-      const parsed = parseWorkbook(wb);
-      if (parsed.months.length === 0){
-        throw new Error('No "Schedule …" sheets with a recognizable day-by-day layout were found in this file.');
-      }
-      SCHEDULE = parsed;
-      fileName.textContent = file.name;
-      fileRow.style.display = 'flex';
-      showStatus(loadStatus, `Loaded ${parsed.months.length} month sheet(s), ${parsed.workerNames.size} agents found.`, true);
-      showUploadedLabel(file.name);
-      workerInput.value = '';
-      buildWorkerOptions();
-      setupMonthAvailability();
-    } catch (err) {
-      showStatus(loadStatus, 'Could not read that file: ' + err.message, false);
-    }
-  };
-  reader.readAsArrayBuffer(file);
 }
 
 // ---- Load the schedule data from the protected API endpoint ----
@@ -395,97 +296,6 @@ function numifyKeys(obj){
   const out = {};
   Object.keys(obj || {}).forEach(k => { out[+k] = obj[k]; });
   return out;
-}
-
-// ---- Parsing ----
-
-function parseWorkbook(wb){
-  const months = [];
-  const workerNames = new Set();
-
-  wb.SheetNames.forEach(sheetName => {
-    if (!/^schedule\b/i.test(sheetName)) return;       // must start with "Schedule"
-    if (/test/i.test(sheetName)) return;                // skip test sheets
-
-    const ws = wb.Sheets[sheetName];
-    const range = XLSX.utils.decode_range(ws['!ref']);
-
-    // 1. Find the row with the most Date-typed cells (the header date row), within first 5 rows.
-    let bestRow = -1, bestCols = [];
-    for (let r = range.s.r; r <= Math.min(range.s.r + 4, range.e.r); r++){
-      const cols = [];
-      for (let c = range.s.c; c <= range.e.c; c++){
-        const cell = ws[XLSX.utils.encode_cell({r, c})];
-        if (cell && cell.v instanceof Date) cols.push(c);
-      }
-      if (cols.length > bestCols.length){ bestCols = cols; bestRow = r; }
-    }
-    if (bestRow === -1 || bestCols.length < 3) return; // not a day-by-day layout, skip
-
-    const dateColumns = bestCols.map(c => ({
-      col: c,
-      date: ws[XLSX.utils.encode_cell({r: bestRow, c})].v
-    }));
-
-    // 2. Find the first row after the date row where column A (col 0) has text
-    //    that isn't the "Day of the week" label — that's the first worker row.
-    let dataStartRow = -1;
-    for (let r = bestRow + 1; r <= range.e.r; r++){
-      const cell = ws[XLSX.utils.encode_cell({r, c: 0})];
-      const v = cell && cell.v;
-      if (v !== undefined && v !== null && String(v).trim() !== '' && String(v).trim().toLowerCase() !== 'day of the week'){
-        dataStartRow = r;
-        break;
-      }
-    }
-    if (dataStartRow === -1) return;
-
-    // Does this sheet have role/status columns (col B / col C) before the dates start?
-    const hasRoleCol = bestCols[0] >= 3; // dates start at col D (index 3) or later
-
-    // 3. Walk every row from dataStartRow; a row is a "worker row" if col A is filled
-    //    and isn't the literal 'Code' / 'Shift Type' label used for the two rows under it.
-    const entries = [];
-    for (let r = dataStartRow; r <= range.e.r; r++){
-      const cell = ws[XLSX.utils.encode_cell({r, c: 0})];
-      const v = cell && cell.v;
-      if (v === undefined || v === null || String(v).trim() === '') continue;
-      const label = String(v).trim();
-      if (label === 'Code' || label === 'Shift Type') continue;
-
-      const role = hasRoleCol ? (ws[XLSX.utils.encode_cell({r, c: 1})]?.v ?? '') : '';
-      const codeRow = (ws[XLSX.utils.encode_cell({r:r+1, c:0})]?.v === 'Code') ? r+1 : null;
-      const typeRow = (ws[XLSX.utils.encode_cell({r:r+2, c:0})]?.v === 'Shift Type') ? r+2 : null;
-
-      const valuesByCol = {};
-      const codesByCol = {};
-      const typesByCol = {};
-      dateColumns.forEach(({col}) => {
-        const cv = ws[XLSX.utils.encode_cell({r, c: col})];
-        valuesByCol[col] = cv ? cv.v : null;
-        if (codeRow !== null){
-          const cc = ws[XLSX.utils.encode_cell({r: codeRow, c: col})];
-          codesByCol[col] = cc ? cc.v : null;
-        }
-        if (typeRow !== null){
-          const tc = ws[XLSX.utils.encode_cell({r: typeRow, c: col})];
-          typesByCol[col] = tc ? tc.v : null;
-        }
-      });
-
-      entries.push({ name: label, role: String(role || '').trim(), valuesByCol, codesByCol, typesByCol });
-      workerNames.add(label);
-    }
-
-    if (entries.length){
-      months.push({ sheetName, dateColumns, entries });
-    }
-  });
-
-  // sort months chronologically by their first date
-  months.sort((a,b) => a.dateColumns[0].date - b.dateColumns[0].date);
-
-  return { months, workerNames };
 }
 
 let ALL_NAMES = [];
