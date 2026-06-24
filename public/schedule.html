@@ -129,12 +129,12 @@
   }
   .chk{
     display:flex; align-items:center; justify-content:center; gap:7px;
-    border:1px solid var(--line); border-radius:7px; padding:12px 6px;
-    font-size:14px; cursor:pointer; background:#fbfaf6; transition:.12s;
+    border:1px solid #000; border-radius:7px; padding:12px 6px;
+    font-size:14px; cursor:pointer; background:#000; color:#f3efe4; transition:.12s;
     user-select:none;
   }
-  .chk input{width:16px; height:16px; accent-color:var(--amber); margin:0; flex-shrink:0;}
-  .chk.checked{border-color:var(--amber); background:var(--checked-bg); color:var(--amber-dark); font-weight:600;}
+  .chk input{width:16px; height:16px; accent-color:#000; margin:0; flex-shrink:0;}
+  .chk.checked{border-color:#555; background:#1a1a1a; color:#fff; font-weight:600;}
   .chk.disabled{opacity:.4; cursor:not-allowed;}
   .chk.all{font-weight:600;}
   @media (max-width: 420px){
@@ -143,12 +143,12 @@
 
   button#downloadBtn{
     width:100%; margin-top:20px; padding:15px; font-size:15px; font-weight:600;
-    background:var(--amber); color:#fff; border:none; border-radius:7px; cursor:pointer;
+    background:#000; color:#f3efe4; border:1px solid #000; border-radius:7px; cursor:pointer;
     transition:.12s background;
     font-family:var(--sans);
   }
-  button#downloadBtn:hover:not(:disabled){background:var(--amber-dark);}
-  button#downloadBtn:disabled{background:#d8d3c4; color:#9b9686; cursor:not-allowed;}
+  button#downloadBtn:hover:not(:disabled){background:#1a1a1a;}
+  button#downloadBtn:disabled{background:#2a2a2a; color:#6b6b6b; cursor:not-allowed;}
 
   .status{
     margin-top:14px; font-size:13px; padding:11px 14px; border-radius:6px; display:none;
