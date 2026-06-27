@@ -163,6 +163,31 @@
   .status.ok{background:#eaf3ec; color:var(--green); border:1px solid #c7e0cd;}
   .status.err{background:#fbeae6; color:#a3402a; border:1px solid #f0cdc3;}
 
+  .preview-empty{font-size:13.5px; color:var(--muted); line-height:1.5;}
+  .preview-month{margin-bottom:26px;}
+  .preview-month:last-child{margin-bottom:0;}
+  .preview-month h3{font-size:14px; margin:0 0 10px; font-weight:600; color:var(--ink);}
+  .preview-grid{display:grid; grid-template-columns:repeat(7,1fr); gap:5px;}
+  .preview-dow{
+    font-size:10px; text-transform:uppercase; letter-spacing:.04em; color:var(--muted);
+    text-align:center; padding:2px 0 6px;
+  }
+  .preview-day{
+    min-height:56px; border:1px solid var(--line); border-radius:6px; padding:5px;
+    font-size:10.5px; background:rgba(255,255,255,.03); display:flex; flex-direction:column; gap:3px;
+  }
+  .preview-day.empty{visibility:hidden;}
+  .preview-day .d{font-weight:700; font-size:11px; color:var(--muted);}
+  .preview-day.work{background:rgba(60,110,79,.2); border-color:rgba(60,110,79,.5);}
+  .preview-day.work .d{color:#cdeccf;}
+  .preview-day.allday{background:rgba(200,120,43,.2); border-color:rgba(200,120,43,.5);}
+  .preview-day.allday .d{color:#f0cfa0;}
+  .preview-day .label{color:#f3efe4; line-height:1.3; word-break:break-word;}
+  @media (max-width: 560px){
+    .preview-day{min-height:46px; font-size:9.5px; padding:3px;}
+    .preview-day .d{font-size:10px;}
+  }
+
   .datasource{margin-top:18px;}
   #dataSourceLabel{
     display:block; width:100%; text-align:center; background:none; border:none;
@@ -231,6 +256,13 @@
       <div class="hint" id="monthHint"></div>
     </div>
 
+  </div>
+
+  <div class="card">
+    <div class="step"><div class="n">2</div><h2>Preview your schedule</h2></div>
+    <div class="preview-empty" id="previewEmpty">Pick an agent and at least one month above to see a preview here before downloading.</div>
+    <div id="previewCalendars"></div>
+
     <button id="downloadBtn" disabled>Download .ics file</button>
     <div class="status" id="downloadStatus"></div>
   </div>
@@ -257,6 +289,8 @@ const monthAll = document.getElementById('monthAll');
 const monthChks = Array.from(document.querySelectorAll('.monthChk'));
 const downloadBtn = document.getElementById('downloadBtn');
 const downloadStatus = document.getElementById('downloadStatus');
+const previewEmpty = document.getElementById('previewEmpty');
+const previewCalendars = document.getElementById('previewCalendars');
 
 let SCHEDULE = null; // { months: [ {label, dateColumns:[{col,date}], entries:[{name, role, datesByCol:{col:value}}] } ] }
 
@@ -434,6 +468,7 @@ function updateDownloadState(){
   const months = selectedMonths();
   const matches = findWorkerEntries(name, months);
   downloadBtn.disabled = !(name.trim() && months.length && matches.length);
+  renderPreview(matches);
 }
 
 const MONTH_NAMES = ['January','February','March','April','May','June','July','August','September','October','November','December'];
@@ -454,6 +489,87 @@ function classifyValue(v){
   if (m) return { kind: 'shift', startH: +m[1], startM: +m[2], endH: +m[3], endM: +m[4] };
   return { kind: 'allday', label: s };
 }
+
+// ---- Static calendar preview (shown before the .ics is generated) ----
+
+const DOW_NAMES = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
+
+function renderPreview(matches){
+  previewCalendars.innerHTML = '';
+  if (!matches.length){
+    previewEmpty.style.display = 'block';
+    return;
+  }
+  previewEmpty.style.display = 'none';
+
+  matches
+    .slice()
+    .sort((a, b) => dY(a.month.dateColumns[0].date) - dY(b.month.dateColumns[0].date) || dM(a.month.dateColumns[0].date) - dM(b.month.dateColumns[0].date))
+    .forEach(({ month, entry }) => {
+      previewCalendars.appendChild(renderMonthGrid(month, entry));
+    });
+}
+
+function renderMonthGrid(month, entry){
+  const wrap = document.createElement('div');
+  wrap.className = 'preview-month';
+
+  const title = document.createElement('h3');
+  title.textContent = monthLabel(month);
+  wrap.appendChild(title);
+
+  const grid = document.createElement('div');
+  grid.className = 'preview-grid';
+
+  DOW_NAMES.forEach(d => {
+    const el = document.createElement('div');
+    el.className = 'preview-dow';
+    el.textContent = d;
+    grid.appendChild(el);
+  });
+
+  const firstDate = month.dateColumns[0].date;
+  const leadingBlanks = dDow(firstDate);
+  for (let i = 0; i < leadingBlanks; i++){
+    const el = document.createElement('div');
+    el.className = 'preview-day empty';
+    grid.appendChild(el);
+  }
+
+  month.dateColumns.forEach(({ col, date }) => {
+    const raw = entry.valuesByCol[col];
+    const status = classifyValue(raw);
+
+    const cell = document.createElement('div');
+    cell.className = 'preview-day';
+
+    const dayNum = document.createElement('div');
+    dayNum.className = 'd';
+    dayNum.textContent = dD(date);
+    cell.appendChild(dayNum);
+
+    if (status.kind === 'shift'){
+      cell.classList.add('work');
+      const label = document.createElement('div');
+      label.className = 'label';
+      label.textContent = `${pad(status.startH)}:${pad(status.startM)}–${pad(status.endH)}:${pad(status.endM)}`;
+      cell.appendChild(label);
+    } else if (status.kind === 'allday'){
+      cell.classList.add('allday');
+      const label = document.createElement('div');
+      label.className = 'label';
+      label.textContent = status.label;
+      cell.appendChild(label);
+    }
+
+    grid.appendChild(cell);
+  });
+
+  wrap.appendChild(grid);
+  return wrap;
+}
+
+function dDow(d){ return d.getUTCDay(); }
 
 // ---- ICS generation ----
 
