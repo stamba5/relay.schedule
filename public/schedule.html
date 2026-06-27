@@ -532,7 +532,7 @@ function makeTimedEvent(name, date, status, description){
 
   return {
     uid: nextUID(),
-    summary: 'Work shift',
+    summary: 'Working hours',
     description: description || '',
     dtstart: fmtLocalDateTime(date, status.startH, status.startM),
     dtend: fmtLocalDateTime(endDate, status.endH, status.endM),
