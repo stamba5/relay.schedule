@@ -22,29 +22,48 @@
   body{
     margin:0;
     font-family:var(--sans);
-    background:
-      linear-gradient(180deg, #14171d 0%, #14171d 220px, var(--paper) 220px, var(--paper) 100%);
     color:var(--ink);
     min-height:100vh;
+    background-color:#0a0a0a;
+    background-image: radial-gradient(ellipse at center, rgba(0,0,0,0) 30%, rgba(0,0,0,.85) 100%);
+    background-attachment: fixed;
   }
   .wrap{max-width:680px; margin:0 auto; padding:0 24px 80px;}
-  header{padding:48px 0 28px; color:#f3efe4;}
+  header{
+    position:relative; left:50%; margin-left:-50vw; width:100vw;
+    color:#f3efe4; overflow:hidden;
+  }
+  header::before{
+    content:""; position:absolute; inset:0; z-index:0;
+    background:
+      linear-gradient(180deg, rgba(8,8,8,.55) 0%, rgba(8,8,8,.72) 55%, rgba(6,6,6,.9) 100%),
+      url(schedule-bg.jpg) center 30% / cover no-repeat;
+  }
+  .header-inner{
+    position:relative; z-index:1; max-width:680px; margin:0 auto;
+    padding:48px 24px 28px;
+  }
   .stamp{
     display:inline-flex; align-items:center; gap:8px;
     font-family:var(--mono); font-size:12px; letter-spacing:.12em; text-transform:uppercase;
-    color:#caa46a; border:1px solid #3a3f4a; padding:5px 10px; border-radius:3px;
+    color:#cdc2a0; border:1px solid #2e2e2e; padding:5px 10px; border-radius:3px;
     margin-bottom:18px;
   }
-  .stamp::before{content:"●"; color:var(--amber); font-size:10px;}
+  .stamp::before{content:"●"; color:#cdc2a0; font-size:10px;}
   h1{
     font-size:34px; line-height:1.15; margin:0 0 10px; font-weight:600;
     letter-spacing:-0.01em;
   }
-  header p{margin:0; color:#b9bcc4; font-size:15px; max-width:46ch; line-height:1.55;}
+  header p{margin:0; color:#b3afa0; font-size:15px; max-width:46ch; line-height:1.55;}
 
   .card{
-    background:var(--card); border:1px solid var(--line); border-radius:10px;
-    padding:28px; margin-top:-46px; position:relative; box-shadow:0 18px 40px -24px rgba(20,23,29,.45);
+    --ink:#f3efe4; --muted:#aba692; --line:rgba(255,255,255,.14);
+    --input-bg:rgba(255,255,255,.06); --hover-bg:rgba(255,255,255,.1);
+    --divider:rgba(255,255,255,.1); --checked-bg:rgba(200,120,43,.18);
+    background:rgba(18,17,15,.55); border:1px solid rgba(255,255,255,.1); border-radius:10px;
+    padding:28px; margin-top:48px; position:relative; box-shadow:0 18px 40px -24px rgba(0,0,0,.6);
+    backdrop-filter:blur(10px); -webkit-backdrop-filter:blur(10px);
+    color:var(--ink);
   }
   .card + .card{margin-top:18px;}
   .step{
@@ -54,16 +73,16 @@
     font-family:var(--mono); font-size:12px; color:var(--amber-dark);
     border:1px solid var(--line); border-radius:50%; width:22px; height:22px;
     display:flex; align-items:center; justify-content:center; flex-shrink:0;
-    background:#fbf6ea;
+    background:var(--checked-bg);
   }
   .step h2{font-size:16px; margin:0; font-weight:600;}
 
   #dropzone{
     border:1.5px dashed var(--line); border-radius:8px; padding:26px;
     text-align:center; cursor:pointer; transition:.15s border-color, .15s background;
-    background:#fbfaf6;
+    background:rgba(255,255,255,.03);
   }
-  #dropzone:hover, #dropzone.drag{border-color:var(--amber); background:#fdf6ea;}
+  #dropzone:hover, #dropzone.drag{border-color:var(--amber); background:rgba(255,255,255,.08);}
   #dropzone .icon{font-size:22px; margin-bottom:8px; opacity:.7;}
   #dropzone p{margin:0; font-size:14px; color:var(--muted);}
   #dropzone strong{color:var(--ink);}
@@ -71,7 +90,7 @@
 
   .filerow{
     display:flex; align-items:center; justify-content:space-between;
-    font-family:var(--mono); font-size:13px; background:#fbf6ea; border:1px solid var(--line);
+    font-family:var(--mono); font-size:13px; background:var(--hover-bg); border:1px solid var(--line);
     border-radius:6px; padding:10px 14px; margin-top:14px;
   }
   .filerow button{
@@ -85,7 +104,7 @@
   }
   input[type="text"]{
     width:100%; padding:14px; font-size:16px; border:1px solid var(--line);
-    border-radius:7px; font-family:var(--sans); background:#fff; color:var(--ink);
+    border-radius:7px; font-family:var(--sans); background:var(--input-bg); color:var(--ink);
     -webkit-appearance:none; appearance:none;
   }
   input[type="text"]:focus{outline:2px solid var(--amber); outline-offset:1px; border-color:var(--amber);}
@@ -93,24 +112,25 @@
   .autocomplete{position:relative;}
   .suggestions{
     position:absolute; left:0; right:0; top:calc(100% + 6px); z-index:20;
-    background:#fff; border:1px solid var(--line); border-radius:8px;
+    background:rgba(40,38,34,.55); border:1px solid var(--line); border-radius:8px;
     box-shadow:0 14px 30px -12px rgba(20,23,29,.35);
+    backdrop-filter:blur(16px) saturate(140%); -webkit-backdrop-filter:blur(16px) saturate(140%);
     max-height:260px; overflow-y:auto; display:none;
     -webkit-overflow-scrolling:touch;
   }
   .suggestions.show{display:block;}
   .suggestions div{
-    padding:13px 14px; font-size:15px; cursor:pointer; border-bottom:1px solid #f1eee4;
+    padding:13px 14px; font-size:15px; cursor:pointer; border-bottom:1px solid var(--divider);
   }
   .suggestions div:last-child{border-bottom:none;}
-  .suggestions div:hover, .suggestions div.active{background:#fbf6ea;}
+  .suggestions div:hover, .suggestions div.active{background:rgba(255,255,255,.12);}
 
   @media (max-width: 560px){
     .wrap{padding:0 16px 60px;}
-    header{padding:32px 0 24px;}
+    .header-inner{padding:32px 16px 24px;}
     h1{font-size:25px;}
     header p{font-size:14px;}
-    .card{padding:20px; margin-top:-30px;}
+    .card{padding:20px; margin-top:28px;}
     #dropzone{padding:20px 14px;}
     .step h2{font-size:15px;}
     button#downloadBtn{padding:16px; font-size:15.5px;}
@@ -129,13 +149,17 @@
   }
   .chk{
     display:flex; align-items:center; justify-content:center; gap:7px;
-    border:1px solid var(--line); border-radius:7px; padding:12px 6px;
-    font-size:14px; cursor:pointer; background:#fbfaf6; transition:.12s;
+    border:1px solid rgba(0,0,0,.5); border-radius:7px; padding:12px 6px;
+    font-size:14px; cursor:pointer; background:rgba(70,65,58,.45); color:#f3efe4;
+    transition:.15s background,.15s border-color,.15s transform;
     user-select:none;
   }
-  .chk input{width:16px; height:16px; accent-color:var(--amber); margin:0; flex-shrink:0;}
-  .chk.checked{border-color:var(--amber); background:#fdf6ea; color:var(--amber-dark); font-weight:600;}
+  .chk:hover{background:rgba(95,88,78,.65); border-color:rgba(0,0,0,.7); transform:translateY(-1px);}
+  .chk input{width:16px; height:16px; accent-color:#000; margin:0; flex-shrink:0;}
+  .chk.checked{border-color:rgba(232,168,92,.55); background:rgba(40,30,15,.6); color:#fff; font-weight:600;}
+  .chk.checked:hover{background:rgba(55,42,20,.7);}
   .chk.disabled{opacity:.4; cursor:not-allowed;}
+  .chk.disabled:hover{transform:none;}
   .chk.all{font-weight:600;}
   @media (max-width: 420px){
     .month-grid{grid-template-columns:repeat(2, 1fr);}
@@ -143,12 +167,12 @@
 
   button#downloadBtn{
     width:100%; margin-top:20px; padding:15px; font-size:15px; font-weight:600;
-    background:var(--amber); color:#fff; border:none; border-radius:7px; cursor:pointer;
-    transition:.12s background;
+    background:rgba(70,65,58,.5); color:#f3efe4; border:1px solid rgba(0,0,0,.55); border-radius:7px; cursor:pointer;
+    transition:.15s background,.15s border-color,.15s transform;
     font-family:var(--sans);
   }
-  button#downloadBtn:hover:not(:disabled){background:var(--amber-dark);}
-  button#downloadBtn:disabled{background:#d8d3c4; color:#9b9686; cursor:not-allowed;}
+  button#downloadBtn:hover:not(:disabled){background:rgba(95,88,78,.7); border-color:rgba(0,0,0,.75); transform:translateY(-1px);}
+  button#downloadBtn:disabled{background:rgba(30,30,30,.4); color:#6b6b6b; cursor:not-allowed;}
 
   .status{
     margin-top:14px; font-size:13px; padding:11px 14px; border-radius:6px; display:none;
@@ -162,23 +186,24 @@
   .syncrow{display:flex; align-items:center; justify-content:center; gap:14px; flex-wrap:wrap;}
   #dataSourceLabel{
     background:none; border:none;
-    color:var(--muted); font-size:12.5px; font-family:var(--sans); cursor:pointer;
-    padding:8px; text-decoration:none;
+    color:#f3efe4; font-size:12.5px; font-family:var(--sans); cursor:pointer;
+    padding:8px; text-decoration:none; text-shadow:0 1px 4px rgba(0,0,0,.85);
   }
-  #dataSourceLabel:hover{color:var(--ink);}
-  #dataSourceLabel span{text-decoration:underline; text-decoration-color:var(--line);}
-  #dataSourceLabel.err span{text-decoration-color:#c98a6f; color:#a3402a;}
+  #dataSourceLabel:hover{color:#fff;}
+  #dataSourceLabel span{text-decoration:underline; text-decoration-color:rgba(255,255,255,.35);}
+  #dataSourceLabel.err span{text-decoration-color:#e2a08a; color:#f0a080;}
   #editSheetLink{
-    font-size:12.5px; font-family:var(--sans); color:var(--amber-dark);
-    text-decoration:none; border:1px solid var(--line); border-radius:6px;
-    padding:6px 10px; background:#fbf6ea;
+    font-size:12.5px; font-family:var(--sans); color:#f0cfa0;
+    text-decoration:none; border:1px solid rgba(255,255,255,.25); border-radius:6px;
+    padding:6px 10px; background:rgba(255,255,255,.06); text-shadow:0 1px 4px rgba(0,0,0,.6);
   }
-  #editSheetLink:hover{border-color:var(--amber); background:#fdf6ea;}
+  #editSheetLink:hover{border-color:var(--amber); background:rgba(255,255,255,.12);}
 
   footer{
-    text-align:center; color:var(--muted); font-size:12px; margin-top:30px; line-height:1.6;
+    text-align:center; color:#f3efe4; font-size:13px; margin-top:30px; line-height:1.7;
+    font-family:var(--mono); text-shadow:0 1px 4px rgba(0,0,0,.85);
   }
-  footer a{color:var(--amber-dark);}
+  footer a{color:#e8a85c;}
 
   datalist{display:none;}
 </style>
@@ -186,9 +211,11 @@
 <body>
 <div class="wrap">
   <header>
-    <div class="stamp">Shift Roster → ICS</div>
-    <h1>Turn a shift schedule into a calendar file</h1>
-    <p>Search for an agent, pick a month — or all three shown — and download an .ics file ready to import into Apple Calendar (or Google, Outlook — any app that reads .ics). Schedule data syncs live from the team's Google Sheet.</p>
+    <div class="header-inner">
+      <div class="stamp">Shift Roster → ICS</div>
+      <h1>Turn a shift schedule into a calendar file</h1>
+      <p>Search for an agent, pick a month — or all three shown — and download an .ics file ready to import into Apple Calendar (or Google, Outlook — any app that reads .ics). Schedule data syncs live from the team's Google Sheet.</p>
+    </div>
   </header>
 
   <div class="card">
