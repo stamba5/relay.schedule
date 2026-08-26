@@ -697,13 +697,18 @@ function nowLabel(){
   return d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
 }
 
+let hasUserInteracted = false;
+let syncInFlight = false;
+
 async function syncFromGoogleSheet(){
+  if (syncInFlight) return;
+  syncInFlight = true;
   try {
     const live = await loadLiveData();
     SCHEDULE = live;
-    workerInput.value = '';
+    if (!hasUserInteracted) workerInput.value = '';
     buildWorkerOptions();
-    setupMonthAvailability();
+    setupMonthAvailability(hasUserInteracted);
     dataSourceLabel.classList.remove('err');
     dataSourceLabel.removeAttribute('title');
     dataSourceText.textContent = `Live from Google Sheet · synced ${nowLabel()}`;
@@ -712,6 +717,8 @@ async function syncFromGoogleSheet(){
     dataSourceLabel.classList.add('err');
     dataSourceText.textContent = 'Live sync failed — using bundled schedule';
     dataSourceLabel.title = (err && err.message) ? err.message : 'Unknown error — see browser console for details.';
+  } finally {
+    syncInFlight = false;
   }
 }
 
@@ -727,7 +734,10 @@ function buildWorkerOptions(){
 // matching sheet found in the loaded data (matched by exact month AND year,
 // so e.g. "Schedule Aug26" doesn't get confused with a stale "Schedule Aug25"),
 // and enable/disable its checkbox accordingly.
-function setupMonthAvailability(){
+// preserveSelection: true for a background re-sync while the user may already
+// be mid-selection — keeps their checked months/search text instead of
+// wiping the form out from under them every refresh cycle.
+function setupMonthAvailability(preserveSelection = false){
   BY_MONTH_KEY = {};
   MONTH_SLOTS.forEach(slot => {
     const match = SCHEDULE.months.find(m =>
@@ -741,18 +751,24 @@ function setupMonthAvailability(){
     const key = chk.dataset.key;
     const found = !!BY_MONTH_KEY[key];
     chk.disabled = !found;
-    chk.checked = false;
+    if (!preserveSelection || !found) chk.checked = false;
     if (!found){
       const slot = MONTH_SLOTS.find(s => s.key === key);
       missing.push(slot ? slot.label : key);
     }
   });
-  monthAll.checked = false;
+  if (preserveSelection){
+    const enabled = monthChks.filter(c => !c.disabled);
+    monthAll.checked = enabled.length > 0 && enabled.every(c => c.checked);
+  } else {
+    monthAll.checked = false;
+  }
   syncMonthChrome();
 
   monthHint.textContent = missing.length
     ? `Not found in this file: ${missing.join(', ')}.`
     : `${MONTH_SLOTS.map(s => s.label).join(', ')} were all found in this file.`;
+  if (preserveSelection) updateDownloadState();
 }
 
 function syncMonthChrome(){
@@ -766,6 +782,7 @@ function syncMonthChrome(){
 }
 
 monthAll.addEventListener('change', () => {
+  hasUserInteracted = true;
   monthChks.forEach(chk => { if (!chk.disabled) chk.checked = monthAll.checked; });
   syncMonthChrome();
   updateDownloadState();
@@ -773,6 +790,7 @@ monthAll.addEventListener('change', () => {
 
 monthChks.forEach(chk => {
   chk.addEventListener('change', () => {
+    hasUserInteracted = true;
     const enabled = monthChks.filter(c => !c.disabled);
     monthAll.checked = enabled.length > 0 && enabled.every(c => c.checked);
     syncMonthChrome();
@@ -810,6 +828,7 @@ document.addEventListener('click', e => {
 });
 
 workerInput.addEventListener('input', () => {
+  hasUserInteracted = true;
   renderSuggestions(workerInput.value);
   updateDownloadState();
 });
@@ -1110,6 +1129,17 @@ function downloadICS(content, filename){
 applyMonthSlots();
 loadBakedData();
 syncFromGoogleSheet();
+
+// Keep the schedule current while the page is left open, without clobbering
+// an in-progress selection (see hasUserInteracted / preserveSelection above).
+const AUTO_SYNC_INTERVAL_MS = 5 * 60 * 1000;
+setInterval(() => {
+  if (document.visibilityState === 'visible') syncFromGoogleSheet();
+}, AUTO_SYNC_INTERVAL_MS);
+
+document.addEventListener('visibilitychange', () => {
+  if (document.visibilityState === 'visible') syncFromGoogleSheet();
+});
 
 </script>
 </body>
