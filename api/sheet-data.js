@@ -46,13 +46,17 @@ export default async function handler(req, res) {
     return res.status(200).json({ rows: apiRes.data.values || [] });
   } catch (err) {
     const status = err?.response?.status;
-    if (status === 400 || status === 404) {
+    const googleMessage = err?.response?.data?.error?.message
+      || err?.response?.data?.error_description
+      || err?.message
+      || 'Unknown error';
+    console.error(`[api/sheet-data] failed to fetch tab "${sheetName}" (status ${status}):`, googleMessage);
+    if (status === 404) {
       return res.status(404).json({ error: `Tab "${sheetName}" not found in the spreadsheet.` });
     }
     if (status === 403) {
-      return res.status(502).json({ error: 'Google denied access — check the sheet is shared with the service account email.' });
+      return res.status(502).json({ error: `Google denied access to "${sheetName}": ${googleMessage} — check the sheet is shared with the service account email.` });
     }
-    console.error(`[api/sheet-data] failed to fetch tab "${sheetName}":`, err?.message || err);
-    return res.status(502).json({ error: `Failed to read tab "${sheetName}" from Google Sheets.` });
+    return res.status(502).json({ error: `Failed to read tab "${sheetName}": ${googleMessage}` });
   }
 }
