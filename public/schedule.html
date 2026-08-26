@@ -558,30 +558,7 @@ function parseWorkbook(wb){
   return { months, workerNames };
 }
 
-// ---- Live Google Sheet sync (CSV export, no auth needed for read access) ----
-
-function parseCSV(text){
-  // Minimal RFC4180 CSV parser: handles quoted fields, embedded commas/quotes/newlines.
-  const rows = [];
-  let row = [], field = '', inQuotes = false;
-  for (let i = 0; i < text.length; i++){
-    const c = text[i];
-    if (inQuotes){
-      if (c === '"'){
-        if (text[i+1] === '"'){ field += '"'; i++; }
-        else inQuotes = false;
-      } else field += c;
-    } else {
-      if (c === '"') inQuotes = true;
-      else if (c === ','){ row.push(field); field = ''; }
-      else if (c === '\r'){ /* skip */ }
-      else if (c === '\n'){ row.push(field); rows.push(row); row = []; field = ''; }
-      else field += c;
-    }
-  }
-  if (field.length || row.length){ row.push(field); rows.push(row); }
-  return rows;
-}
+// ---- Live Google Sheet sync (via /api/sheet-data, a service-account-backed endpoint) ----
 
 const DATE_CELL_RE = /^(\d{1,2})\/(\d{1,2})\/(\d{4})$/;
 
@@ -651,16 +628,27 @@ function parseCSVSheet(sheetName, rows){
   return { sheetName, dateColumns, entries, workerNames };
 }
 
-async function fetchSheetCSV(sheetName){
-  const url = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tqx=out:csv&sheet=${encodeURIComponent(sheetName)}`;
+// Fetches one tab through our own /api/sheet-data endpoint, which holds the
+// Google service-account credentials server-side — the sheet stays privately
+// shared (with just that service account), never "anyone with the link".
+async function fetchSheetRows(sheetName){
+  const url = `/api/sheet-data?sheet=${encodeURIComponent(sheetName)}`;
   const res = await fetch(url, { cache: 'no-store' });
-  if (!res.ok) throw new Error(`HTTP ${res.status}`);
-  return res.text();
+  if (!res.ok){
+    let msg = `HTTP ${res.status}`;
+    try {
+      const body = await res.json();
+      if (body && body.error) msg = body.error;
+    } catch { /* non-JSON error body, keep the HTTP status */ }
+    throw new Error(msg);
+  }
+  const body = await res.json();
+  return body.rows || [];
 }
 
 async function loadLiveData(){
   const targets = Object.entries(MONTH_SHEET_NAMES); // [ [idx, sheetName], ... ]
-  const results = await Promise.allSettled(targets.map(([, sheetName]) => fetchSheetCSV(sheetName)));
+  const results = await Promise.allSettled(targets.map(([, sheetName]) => fetchSheetRows(sheetName)));
 
   const months = [];
   const workerNames = new Set();
@@ -671,10 +659,10 @@ async function loadLiveData(){
     const sheetName = targets[i][1];
     if (res.status !== 'fulfilled') {
       issues.push(`"${sheetName}": ${res.reason && res.reason.message ? res.reason.message : res.reason}`);
-      console.error(`[schedule] fetch failed for tab "${sheetName}" — likely the sheet isn't shared "Anyone with the link can view", or a network/CORS error.`, res.reason);
+      console.error(`[schedule] fetch failed for tab "${sheetName}"`, res.reason);
       return;
     }
-    const rows = parseCSV(res.value);
+    const rows = res.value;
     const parsed = parseCSVSheet(sheetName, rows);
     if (!parsed) {
       issues.push(`"${sheetName}": fetched OK but couldn't be parsed as a schedule tab`);
