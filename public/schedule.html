@@ -664,20 +664,29 @@ async function loadLiveData(){
 
   const months = [];
   const workerNames = new Set();
+  const issues = [];
   let anyOk = false;
 
   results.forEach((res, i) => {
     const sheetName = targets[i][1];
-    if (res.status !== 'fulfilled') return;
+    if (res.status !== 'fulfilled') {
+      issues.push(`"${sheetName}": ${res.reason && res.reason.message ? res.reason.message : res.reason}`);
+      console.error(`[schedule] fetch failed for tab "${sheetName}" — likely the sheet isn't shared "Anyone with the link can view", or a network/CORS error.`, res.reason);
+      return;
+    }
     const rows = parseCSV(res.value);
     const parsed = parseCSVSheet(sheetName, rows);
-    if (!parsed) return;
+    if (!parsed) {
+      issues.push(`"${sheetName}": fetched OK but couldn't be parsed as a schedule tab`);
+      console.error(`[schedule] fetched "${sheetName}" but parseCSVSheet() returned null — check a tab named exactly "${sheetName}" exists (Google Sheets tab names are case-sensitive) and its layout matches the expected format.`);
+      return;
+    }
     anyOk = true;
     months.push({ sheetName: parsed.sheetName, dateColumns: parsed.dateColumns, entries: parsed.entries });
     parsed.workerNames.forEach(n => workerNames.add(n));
   });
 
-  if (!anyOk) throw new Error('Could not read any month sheet from the Google Sheet.');
+  if (!anyOk) throw new Error(`Could not read any month sheet from the Google Sheet. ${issues.join(' | ')}`);
 
   months.sort((a,b) => a.dateColumns[0].date - b.dateColumns[0].date);
   return { months, workerNames };
@@ -696,10 +705,13 @@ async function syncFromGoogleSheet(){
     buildWorkerOptions();
     setupMonthAvailability();
     dataSourceLabel.classList.remove('err');
+    dataSourceLabel.removeAttribute('title');
     dataSourceText.textContent = `Live from Google Sheet · synced ${nowLabel()}`;
   } catch (err) {
+    console.error('[schedule] live Google Sheet sync failed:', err);
     dataSourceLabel.classList.add('err');
     dataSourceText.textContent = 'Live sync failed — using bundled schedule';
+    dataSourceLabel.title = (err && err.message) ? err.message : 'Unknown error — see browser console for details.';
   }
 }
 
