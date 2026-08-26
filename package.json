@@ -4,6 +4,8 @@
   "type": "module",
   "dependencies": {
     "@vercel/analytics": "^2.0.1",
-    "google-auth-library": "^9.14.1"
+    "@vercel/blob": "^0.27.1",
+    "google-auth-library": "^9.14.1",
+    "resend": "^4.0.1"
   }
 }

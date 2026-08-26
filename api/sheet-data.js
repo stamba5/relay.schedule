@@ -1,39 +1,4 @@
-import { JWT } from 'google-auth-library';
-
-// Same spreadsheet the public schedule page links to for editing.
-const SHEET_ID = '1KfvIzU2WH1xocTDkDDdWRHAvc7B3MFU6IdDbyxM6PJg';
-
-let cachedClient = null;
-
-// The full service-account JSON key file, base64-encoded into one env var.
-// Avoids the newline/quote mangling that copying just the "private_key"
-// field into a separate env var is prone to (multi-line PEM keys get
-// corrupted very easily by paste, trimming, or single-line text inputs).
-function getClient() {
-  if (cachedClient) return cachedClient;
-
-  const encoded = process.env.GOOGLE_SERVICE_ACCOUNT_KEY_BASE64;
-  if (!encoded) {
-    throw new Error('Missing GOOGLE_SERVICE_ACCOUNT_KEY_BASE64 env var');
-  }
-
-  let creds;
-  try {
-    creds = JSON.parse(Buffer.from(encoded, 'base64').toString('utf8'));
-  } catch {
-    throw new Error('GOOGLE_SERVICE_ACCOUNT_KEY_BASE64 is not valid base64-encoded JSON');
-  }
-  if (!creds.client_email || !creds.private_key) {
-    throw new Error('Decoded service account JSON is missing client_email or private_key');
-  }
-
-  cachedClient = new JWT({
-    email: creds.client_email,
-    key: creds.private_key,
-    scopes: ['https://www.googleapis.com/auth/spreadsheets.readonly'],
-  });
-  return cachedClient;
-}
+import { getSheetClient, SHEET_ID } from './_lib/google-sheets.js';
 
 // Reads one tab of the (privately shared) schedule spreadsheet server-side,
 // using a Google service account the sheet is shared with directly — so the
@@ -46,7 +11,7 @@ export default async function handler(req, res) {
 
   let client;
   try {
-    client = getClient();
+    client = getSheetClient();
   } catch (err) {
     console.error('[api/sheet-data] service account not configured:', err.message);
     return res.status(500).json({ error: `Server's Google service account credentials are missing or invalid: ${err.message}` });
